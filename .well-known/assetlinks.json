@@ -1,0 +1,14 @@
+[
+    {
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.thirdeyetechlabs.taskdiary",
+        "sha256_cert_fingerprints": [
+          "C0:3C:78:CC:95:2F:5C:DD:3E:DE:1F:FE:42:23:F7:2B:FC:9C:10:63:D9:47:FC:1D:0E:E4:1D:2C:45:4D:E6:5A",
+          "91:F2:DB:A6:30:9F:FC:35:4F:7D:59:D5:60:2B:12:49:EF:82:F4:8F:8A:FC:62:FB:1F:F8:1F:8F:1C:6C:5B:AE"
+        ]
+      }
+    }
+  ]
+  

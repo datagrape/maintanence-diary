@@ -270,7 +270,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/ashishsharma/Desktop/task-diary-backend/generated/prisma",
+      "value": "/Users/ashishsharma/Desktop/maintainance-diary-backend/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -284,7 +284,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/ashishsharma/Desktop/task-diary-backend/prisma/schema.prisma",
+    "sourceFilePath": "/Users/ashishsharma/Desktop/maintainance-diary-backend/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

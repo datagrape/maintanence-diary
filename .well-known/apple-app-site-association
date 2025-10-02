@@ -1,14 +1,16 @@
 {
- "applinks": {
- "details": [
-  {
-  "appIDs": ["72449NCMKQ.com.thirdeyetechlabs.maintenancediary" ],
-  "components": [
-  {
- "/": "*"
-  }
-  ]
-  }
-  ]
-  }
+    "applinks": {
+        "details": [
+            {
+                "appIDs": [
+                    "72449NCMKQ.com.thirdeyetechlabs.maintenancediary"
+                ],
+                "components": [
+                    {
+                        "/": "*"
+                    }
+                ]
+            }
+        ]
+    }
 }

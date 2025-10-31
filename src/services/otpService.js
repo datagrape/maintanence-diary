@@ -25,8 +25,16 @@ exports.sendOtp = async (email) => {
     console.log(otp)
     console.log(otpExpiration)
     console.log(email)
+    const user = await prisma.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
+    });
+
+    if (!user) {
+        throw new Error('User with that email not found');
+    }
+
     await prisma.user.update({
-        where: { email },
+        where: { id: user.id },
         data: { otp, otpExpiration },
     });
 

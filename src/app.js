@@ -74,6 +74,15 @@ app.use((req, res, next) => {
   next();
 });
 
+/* ---------------- Serve HTML/static files ---------------- */
+app.use(express.static(path.join(__dirname, 'public')));
+
+/* Optional pretty route: /otp */
+app.get('/otp', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'otp.html'));
+});
+
+
 /* --------------- Use src/.well-known explicitly --------------- */
 const WELL_KNOWN_DIR = path.join(__dirname, '.well-known'); // <- your location
 const AASA_NAME = 'apple-app-site-association';
@@ -146,6 +155,7 @@ app.use('/api/group', require('./routes/groupRoutes'));
 app.use('/api/task', require('./routes/taskRoutes'));
 app.use('/api/subscriptionupdate', require('./routes/subscription'));
 app.use('/api/link-data', require('./routes/linkDataUpdateRoutes'));
+app.use('/api/account/delete', require('./routes/deleteAccountRoutes'));
 
 /* ---------------- Health & errors ---------------- */
 app.get('/_health', (req, res) => res.json({ ok: true }));

@@ -65,6 +65,7 @@ model User {
   cancellationReason   String?
   otp                  String?
   otpExpiration        DateTime?
+  isDisabled           Boolean          @default(false)
   subscriptions        Subscription[]
   createdAt            DateTime         @default(now())
 }

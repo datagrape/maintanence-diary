@@ -77,8 +77,8 @@ app.use((req, res, next) => {
 /* ---------------- Serve HTML/static files ---------------- */
 app.use(express.static(path.join(__dirname, 'public')));
 
-/* Optional pretty route: /otp */
-app.get('/otp', (req, res) => {
+/* Optional pretty route: /account-delete */
+app.get('/account-delete', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'otp.html'));
 });
 

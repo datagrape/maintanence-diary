@@ -1,61 +1,3 @@
-// const express = require('express');
-// const app = express();
-// const path = require('path');
-// // Middlewares
-// app.use(express.json());
-
-// app.use((req, res, next) => {
-    
-//     console.log("Incoming:", req.method, req.url);
-//     res.setHeader("Access-Control-Allow-Origin", "*"); // only for dev
-//     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE");
-//     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-//     next();
-//   });
-  
-// // ✅ Serve .well-known from root
-// app.use('/.well-known', express.static(path.join(__dirname, '../.well-known')));
-
-// app.get('/.well-known/apple-app-site-association', (req, res) => {
-//   res.type('application/json');
-//   res.sendFile(path.join(__dirname, '../.well-known/apple-app-site-association'));
-// });
-
-// // Routes
-// const loginRoutes = require('./routes/loginRoutes');
-// app.use('/api/login', loginRoutes);
-
-// const registerUserRoutes = require('./routes/registerUserRoutes');
-// app.use('/api/registerUser', registerUserRoutes);
-
-// const otpRoutes = require('./routes/otpRoutes');
-// app.use('/api/sendotp', otpRoutes);
-
-// const otpVerifyRoutes = require('./routes/otpVerifyRoutes');
-// app.use('/api/verifyOTP', otpVerifyRoutes);
-
-// const activityRoutes = require('./routes/activityRoutes');
-// app.use('/api/activity', activityRoutes);
-
-// const groupRoutes = require('./routes/groupRoutes');
-// app.use('/api/group', groupRoutes);
-
-// const taskRoutes = require('./routes/taskRoutes');
-// app.use('/api/task', taskRoutes);
-
-// const subscriptionRoutes = require("./routes/subscription");
-// app.use("/api/subscriptionupdate", subscriptionRoutes);
-
-// const linkDataUpdateRoutes = require("./routes/linkDataUpdateRoutes");
-// app.use("/api/link-data", linkDataUpdateRoutes);
-
-// // Error handling middleware
-// const errorHandler = require('./middlewares/errorHandler');
-// app.use(errorHandler);
-
-// module.exports = app;
-
-
 // src/app.js
 const express = require('express');
 const path = require('path');
@@ -82,9 +24,8 @@ app.get('/account-delete', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'otp.html'));
 });
 
-
 /* --------------- Use src/.well-known explicitly --------------- */
-const WELL_KNOWN_DIR = path.join(__dirname, '.well-known'); // <- your location
+const WELL_KNOWN_DIR = path.join(__dirname, '.well-known');
 const AASA_NAME = 'apple-app-site-association';
 const ASSETLINKS_NAME = 'assetlinks.json';
 
@@ -95,9 +36,9 @@ function readAndSendJSON(fileName, res) {
       console.error('[.well-known] read error:', full, err.code);
       return res.status(404).json({ error: 'Not Found' });
     }
-    res.set('Content-Type', 'application/json');      // required for Apple/Android
-    res.set('Cache-Control', 'public, max-age=600');  // optional
-    res.send(buf);                                    // no redirects
+    res.set('Content-Type', 'application/json');
+    res.set('Cache-Control', 'public, max-age=600');
+    res.send(buf);
   });
 }
 
@@ -114,12 +55,10 @@ app.get('/.well-known/assetlinks.json', (req, res) =>
   readAndSendJSON(ASSETLINKS_NAME, res)
 );
 
-
-// Optional root alias (only if you want /assetlinks.json to work too)
+// Optional root alias
 app.get('/assetlinks.json', (req, res) =>
   readAndSendJSON(ASSETLINKS_NAME, res)
 );
-
 
 /* --------------- Debug helpers (remove later) --------------- */
 app.get('/_debug/wk', (req, res) => {
@@ -145,7 +84,7 @@ app.get('/.well-known/_cat/:name', (req, res) => {
   });
 });
 
-/* ---------------- Your existing routes ---------------- */
+/* ---------------- Your existing API routes ---------------- */
 app.use('/api/login', require('./routes/loginRoutes'));
 app.use('/api/registerUser', require('./routes/registerUserRoutes'));
 app.use('/api/sendotp', require('./routes/otpRoutes'));
@@ -156,9 +95,29 @@ app.use('/api/task', require('./routes/taskRoutes'));
 app.use('/api/subscriptionupdate', require('./routes/subscription'));
 app.use('/api/link-data', require('./routes/linkDataUpdateRoutes'));
 app.use('/api/account/delete', require('./routes/deleteAccountRoutes'));
+app.use('/api/location-request', require('./routes/locationRequestRoutes'));
+app.use('/api/forgot-password', require('./routes/forgotPasswordRoutes'));
 
-/* ---------------- Health & errors ---------------- */
+
+/* ---------------- Centralized error handler ---------------- */
+// app.use((err, req, res, next) => {
+//   const status = err.status || 500;
+
+//   const payload = {
+//     error: err.status === 409
+//       ? err.message
+//       : 'Unexpected error. Please try again.'
+//   };
+
+//   console.error({ err, path: req.path }, 'request_failed');
+
+//   res.status(status).json(payload);
+// });
+
+/* ---------------- Health check ---------------- */
 app.get('/_health', (req, res) => res.json({ ok: true }));
+
+/* ---------------- Global fallback error handler ---------------- */
 app.use(require('./middlewares/errorHandler'));
 
 module.exports = app;

@@ -1,13 +1,52 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
+const { Prisma } = require('@prisma/client');
+const prisma = require('../prismaClient');
 const fetch = require("node-fetch");
 
 function generateOTP(length = 6) {
   return Math.floor(100000 + Math.random() * 900000).toString().slice(0, length);
 }
 
+// -------------------------------------------------------
+// USER ENABLED CHECK
+// -------------------------------------------------------
+const ensureUserEnabled = async (userId) => {
+  // Early return if user ID is not provided or invalid
+  if (!userId) return; 
+
+  const uid = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+  
+  // If parsing resulted in NaN or invalid number, skip validation (user not required)
+  if (isNaN(uid) || uid <= 0) {
+    return; // Silently skip if no valid user ID provided
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: uid },
+    select: { id: true, isDisabled: true }
+  });
+
+  if (!user) {
+    const err = new Error('User not found');
+    err.status = 404;
+    err.body = { message: 'User not found' };
+    throw err;
+  }
+
+  if (user.isDisabled) {
+    const err = new Error('User is deactivated');
+    err.status = 401;
+    err.body = { message: 'User is deactivated' };
+    throw err;
+  }
+
+  return user;
+};
+
+// -------------------------------------------------------
+// LINK DATA CREATE/UPDATE
+// -------------------------------------------------------
 exports.linkData = async (
+  taskId,
   link,
   owner,
   duedate,
@@ -16,78 +55,28 @@ exports.linkData = async (
   taskname,
   completeddate,
   location,
-  subscription
+  subscription,
+  updatedBy
 ) => {
+
+  // 🔐 Validate the user performing the update
+  await ensureUserEnabled(updatedBy);
+
   const existingLink = await prisma.link.findUnique({ where: { link } });
 
+  const linksWithTaskId = await prisma.link.findMany({ where: { taskId } });
 
-  // if (existingLink) {
-  //   return prisma.link.update({
-  //     where: { link },
-  //     data: {
-  //       completeddate,
-  //       location
-  //     }
-  //   });
-  // }
-  if (existingLink) {
-    // ✅ If both values already exist, just return them
-    if (existingLink.completeddate && existingLink.location) {
-      return {
-        completeddate: existingLink.completeddate,
-        location: existingLink.location
-      };
-    }
+  const allUpdatedByNull =
+    linksWithTaskId.length > 0 &&
+    linksWithTaskId.every(l => l.updatedBy === null);
 
-    // ✅ Else update the link with new values
-    return prisma.link.update({
-      where: { link },
-      data: {
-        completeddate,
-        location
-      }
-    });
-  }
-
-  // If subscription is 'paid', send OTPs and update paidmemberdata
-  if (subscription == "paid") {
-    try {
-      const memberObj = typeof member == "string" ? JSON.parse(member) : member;
-
-      for (const name in memberObj) {
-        const phoneNumber = memberObj[name];
-        const otp = generateOTP();
-
-        // Send OTP via Textbelt
-        // await sendFreeOtpTextbelt(phoneNumber, otp);
-
-        // Save link and OTP to paidmemberdata table
-        await prisma.paidmemberdata.create({
-          data: {
-            link,
-            otp
-          }
-        });
-        return prisma.link.create({
-          data: {
-            link,
-            owner,
-            duedate,
-            group,
-            member,
-            taskname,
-            completeddate,
-            location,
-            subscription
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Error processing paid members:", error);
-    }
-  } else {
+  // ------------------------------------------
+  // CASE 1: No link exists → create new entry
+  // ------------------------------------------
+  if (!existingLink) {
     return prisma.link.create({
       data: {
+        taskId,
         link,
         owner,
         duedate,
@@ -100,118 +89,115 @@ exports.linkData = async (
       }
     });
   }
-};
 
-// Send OTP using Textbelt (free test version)
-async function sendFreeOtpTextbelt(phoneNumber, otp) {
-  try {
-    const response = await fetch("https://textbelt.com/text", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone: phoneNumber,
-        message: `Your OTP is ${otp}`,
-        key: "textbelt" // free test key
-      })
+  // --------------------------------------------------------
+  // CASE 2: Link exists + all updatedBy are null → first update
+  // --------------------------------------------------------
+  if (existingLink && allUpdatedByNull) {
+    await prisma.link.updateMany({
+      where: { taskId },
+      data: {
+        completeddate,
+        location,
+        updatedBy,
+        isAccessed: 1
+      }
     });
 
-    const result = await response.json();
-    console.log(`OTP sent to ${phoneNumber}:`, result);
-  } catch (error) {
-    console.error(`Failed to send OTP to ${phoneNumber}:`, error);
+    return prisma.link.findUnique({ where: { link } });
   }
-}
 
+  // --------------------------------------------------------
+  // CASE 3: Link already updated by someone else → return their values
+  // --------------------------------------------------------
+  const updatedLink = linksWithTaskId.find(l => l.updatedBy !== null);
 
-// exports.getLinkData = async (link) => {
-//   const existingLink = await prisma.link.findUnique({ where: { link } });
-//   // If `link` is provided, fetch the specific link
-//   if (existingLink) {
-//     return prisma.link.findUnique({
-//       where: { link: link }
-//     });
-//   }
-// };
+  return {
+    completeddate: updatedLink?.completeddate,
+    location: updatedLink?.location,
+    updatedBy: updatedLink?.updatedBy,
+    message: "Link is already updatedBy by someone"
+  };
+};
 
+// -------------------------------------------------------
+// GET MULTIPLE LINKS
+// -------------------------------------------------------
 exports.getLinkData = async (links) => {
-  // Ensure it's an array
   if (!Array.isArray(links)) {
     throw new Error("Expected an array of links");
   }
 
   return prisma.link.findMany({
-    where: {
-      link: {
-        in: links
-      }
-    }
+    where: { link: { in: links } }
   });
 };
 
+// -------------------------------------------------------
+// CHECK ACCESS STATUS
+// -------------------------------------------------------
+exports.checkLinkAccessed = async (link, device = {}) => {
+  const existingLink = await prisma.link.findUnique({ where: { link } });
 
-
-exports.getMemberLinkData = async (link, otp = null) => {
-  const existingLink = await prisma.link.findFirst({ where: { link } });
-
-  if (!existingLink) {
-    return { message: "Link not found" };
+  if (!existingLink || existingLink.isAccessed == 1) {
+    return { message: "Link is expired or not found" };
   }
 
-  // FREE subscription logic
-  if (existingLink.subscription == "free") {
-    if (existingLink.freecount > 0) {
-      await prisma.link.update({
-        where: { id: existingLink.id },
-        data: { freecount: { decrement: 1 } }
-      });
-
-      return existingLink;
-    } else {
-      return { message: "Data not available" };
-    }
-  }
-
-  // PAID subscription logic
-  if (existingLink.subscription == "paid") {
-    if (!otp) {
-      return { message: "OTP required for paid access" };
-    }
-
-    const paidMember = await prisma.paidmemberdata.findFirst({
-      where: {
-        link: link,
-        otp: otp
+  const normalizedToken = typeof device.deviceToken === 'string' ? device.deviceToken.trim() : '';
+  if (normalizedToken) {
+    await prisma.deviceToken.upsert({
+      where: { token: normalizedToken },
+      update: {
+        taskId: existingLink.taskId,
+        isActive: true,
+        platform: 'unknown'
+      },
+      create: {
+        taskId: existingLink.taskId,
+        token: normalizedToken,
+        platform: 'unknown',
+        isActive: true
       }
     });
-
-    if (!paidMember) {
-      return { message: "Invalid OTP or link" };
-    }
-
-    if (paidMember.otpcount > 0) {
-      await prisma.paidmemberdata.update({
-        where: { id: paidMember.id },
-        data: { otpcount: { decrement: 1 } }
-      });
-
-      return existingLink;
-    } else {
-      return { message: "Data not available" };
-    }
   }
 
-  return { message: "Invalid subscription type" };
+  return prisma.link.update({
+    where: { link },
+    data: { isAccessed: 1 }
+  });
 };
 
+// -------------------------------------------------------
+// GET MEMBER LINK DATA (no user context required)
+// -------------------------------------------------------
+exports.getMemberLinkData = async (link, otp = null) => {
+  const linksArray = Array.isArray(link) ? link : [link];
 
+  const existingLinks = await prisma.link.findMany({
+    where: { link: { in: linksArray } }
+  });
 
+  if (!existingLinks || existingLinks.length === 0) {
+    return { message: "Link(s) not found" };
+  }
 
-exports.getOwnerLinkData = async ( owner) => {
-  const existingLink = await prisma.link.findFirst({ where: {  owner } });
-  // If `link` and `owner` are provided, fetch the specific link
+  return existingLinks;
+};
+
+// -------------------------------------------------------
+// GET OWNER LINK DATA (requires ensureUserEnabled)
+// -------------------------------------------------------
+exports.getOwnerLinkData = async (owner) => {
+
+  await ensureUserEnabled(owner);
+
+  const existingLink = await prisma.link.findFirst({ where: { owner } });
+
   if (existingLink) {
     return prisma.link.findMany({
       where: { owner }
     });
   }
+
+  return [];
 };

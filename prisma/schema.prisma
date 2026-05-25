@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,100 +7,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserType{
-  Superadmin
-  Admin
-  User
-}
-
-enum SubscriptionType{
-Free
-Professional_monthly
-Professional_yearly
-Premium_monthly
-Premium_yearly
-}
-
 model Activity {
-  id           Int           @id @default(autoincrement())
-  userId               Int        // Reference to User
-  name         String
+  id     Int    @id @default(autoincrement())
+  userId Int
+  name   String
 }
 
 model Group {
-  id           Int           @id @default(autoincrement())
-  userId               Int        // Reference to User
-  name         String
+  id     Int    @id @default(autoincrement())
+  userId Int
+  name   String
 }
 
 model Task {
-  id                Int           @id @default(autoincrement())
-  userId            Int 
-  name              String?       
-  groupName         String
-  groupId           Int
-  activityName      String
-  activityId        Int
-  member            String
-  dueDate           String
-  type              String
-  location         String?
+  id           Int     @id @default(autoincrement())
+  userId       Int
+  name         String?
+  groupName    String
+  groupId      Int
+  activityName String
+  activityId   Int
+  member       String
+  dueDate      String
+  type         String
+  location     String?
 }
 
 model User {
-  id                   Int              @id @default(autoincrement())
-  name                 String?
-  email                String           @unique
-  password             String?
-  userType             UserType
-  link                 String?
-  subscriptionType     SubscriptionType
-  lastPaymentDate      DateTime?
-  cancellationReason   String?
-  otp                  String?
-  otpExpiration        DateTime?
-  isDisabled           Boolean          @default(false)
-  subscriptions        Subscription[]
-  createdAt            DateTime         @default(now())
+  id                          Int                       @id @default(autoincrement())
+  name                        String?
+  email                       String                    @unique
+  password                    String?
+  userType                    UserType
+  link                        String?
+  subscriptionType            SubscriptionType
+  lastPaymentDate             DateTime?
+  cancellationReason          String?
+  otp                         String?
+  otpExpiration               DateTime?
+  createdAt                   DateTime                  @default(now())
+  isDisabled                  Boolean                   @default(false)
+  passwordResetToken          String?
+  passwordResetTokenExpiresAt DateTime?
+  deviceTokens                DeviceToken[]
+  locationResponsesAsAdmin    LocationRequestResponse[] @relation("LocationResponseAdmin")
+  locationResponsesAsUser     LocationRequestResponse[] @relation("LocationResponseUser")
+  subscriptions               Subscription[]
 }
-
 
 model Subscription {
-  id                   Int        @id @default(autoincrement())
-  userId               Int        // Reference to User
-  razorpayCustomerId   String     // Razorpay Customer ID
-  planId               String     // ID of the subscription plan
-  startDate            DateTime   @default(now())
-  endDate              DateTime?  // When the subscription expires
-  amount               Int        // Subscription amount
-  status               String     // Active, Inactive, etc.
-  autoRenew            Boolean    @default(true) // Indicates if the subscription is auto-renewable
-  renewalCount         Int        @default(0) // Track the number of renewals
-  user                 User       @relation(fields: [userId], references: [id])
-  payments            Payment[]
+  id                 Int       @id @default(autoincrement())
+  userId             Int
+  razorpayCustomerId String
+  planId             String
+  startDate          DateTime  @default(now())
+  endDate            DateTime?
+  amount             Int
+  status             String
+  autoRenew          Boolean   @default(true)
+  renewalCount       Int       @default(0)
+  payments           Payment[]
+  user               User      @relation(fields: [userId], references: [id])
 }
+
 model Payment {
-  id            Int        @id @default(autoincrement())
-  subscriptionId Int       // Reference to the Subscription
-  amount        Int        // Amount paid
-  paymentDate   DateTime   @default(now()) // Date of the payment
-  status        String     // Success, Failed, etc.
-  razorpayPaymentId String? // ID from Razorpay for tracking purposes
-  subscription  Subscription @relation(fields: [subscriptionId], references: [id])
+  id                Int          @id @default(autoincrement())
+  subscriptionId    Int
+  amount            Int
+  paymentDate       DateTime     @default(now())
+  status            String
+  razorpayPaymentId String?
+  subscription      Subscription @relation(fields: [subscriptionId], references: [id])
 }
 
 model Link {
-  id             Int     @id @default(autoincrement())
-  link           String  @unique
-  owner          String?
-  taskname       String?
-  member         String?
-  group          String?
-  duedate        String?
-  completeddate  String?
-  location       String?
-  freecount      Int     @default(5)  // 👈 Default value added
-  subscription   String? 
+  id            Int       @id @default(autoincrement())
+  link          String    @unique
+  owner         String?
+  taskname      String?
+  member        String?
+  group         String?
+  duedate       String?
+  completeddate String?
+  location      String?
+  freecount     Int       @default(5)
+  subscription  String?
+  expiresAt     DateTime?
+  isAccessed    Int       @default(0)
+  taskId        Int?
 }
 
 model paidmemberdata {
@@ -116,14 +104,60 @@ model paidmemberdata {
   otpcount Int    @default(1)
 }
 
-
-
 model Ad {
   id         Int      @id @default(autoincrement())
-  contentUrl String   // URL for the image or video
-  startDate  DateTime // Ad start date
-  endDate    DateTime // Ad end date
-  createdAt  DateTime @default(now()) // Timestamp for when the ad was created
-  updatedAt  DateTime @updatedAt      // Auto-updated timestamp for changes
+  contentUrl String
+  startDate  DateTime
+  endDate    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
+model DeviceToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  taskId    Int?
+  userId    Int?
+  platform  String   @default("unknown")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+}
+
+model LocationRequestResponse {
+  id          Int      @id @default(autoincrement())
+  requestId   String
+  adminId     Int
+  userId      Int
+  status      String
+  latitude    Float?
+  longitude   Float?
+  accuracy    Float?
+  notes       String?
+  respondedAt DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  admin       User     @relation("LocationResponseAdmin", fields: [adminId], references: [id])
+  user        User     @relation("LocationResponseUser", fields: [userId], references: [id])
+
+  @@index([requestId])
+  @@index([userId])
+  @@index([adminId])
+}
+
+enum UserType {
+  Superadmin
+  Admin
+  User
+}
+
+enum SubscriptionType {
+  Free
+  Professional_monthly
+  Professional_yearly
+  Premium_monthly
+  Premium_yearly
+}

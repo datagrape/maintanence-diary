@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "Maintenance Diary API",
+    "description": "Postman collection for maintanence-diary backend services.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth Service",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password@123\"\n}" },
+            "url": "{{baseUrl}}/api/registerUser"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password@123\"\n}" },
+            "url": "{{baseUrl}}/api/login"
+          }
+        },
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\"\n}" },
+            "url": "{{baseUrl}}/api/sendotp"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}" },
+            "url": "{{baseUrl}}/api/verifyOTP"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Forgot Password Service",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\"\n}" },
+            "url": "{{baseUrl}}/api/forgot-password/send-otp"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}" },
+            "url": "{{baseUrl}}/api/forgot-password/verify-otp"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"newPassword\": \"Password@123\",\n  \"resetToken\": \"paste-token\"\n}" },
+            "url": "{{baseUrl}}/api/forgot-password/reset"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Activity Service",
+      "item": [
+        { "name": "Create Activity", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Plumbing\",\n  \"userId\": 1\n}" }, "url": "{{baseUrl}}/api/activity" } },
+        { "name": "List Activity By User", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": 1\n}" }, "url": "{{baseUrl}}/api/activity/list" } },
+        { "name": "Delete Activity", "request": { "method": "DELETE", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"id\": 1\n}" }, "url": "{{baseUrl}}/api/activity" } }
+      ]
+    },
+    {
+      "name": "Group Service",
+      "item": [
+        { "name": "Create Group", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Team A\",\n  \"userId\": 1\n}" }, "url": "{{baseUrl}}/api/group" } },
+        { "name": "List Group By User", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": 1\n}" }, "url": "{{baseUrl}}/api/group/list" } },
+        { "name": "Delete Group", "request": { "method": "DELETE", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"id\": 1\n}" }, "url": "{{baseUrl}}/api/group" } }
+      ]
+    },
+    {
+      "name": "Task Service",
+      "item": [
+        { "name": "Create Task", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Check AC\",\n  \"userId\": 1,\n  \"groupName\": \"Team A\",\n  \"groupId\": 1,\n  \"activityName\": \"Maintenance\",\n  \"activityId\": 1,\n  \"member\": \"John\",\n  \"dueDate\": \"2026-06-01\",\n  \"type\": \"Routine\",\n  \"location\": \"HQ\"\n}" }, "url": "{{baseUrl}}/api/task" } },
+        { "name": "List Task By User", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": 1\n}" }, "url": "{{baseUrl}}/api/task/list" } }
+      ]
+    },
+    {
+      "name": "Subscription Service",
+      "item": [
+        { "name": "Update Subscription", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"subscriptionType\": \"Paid\"\n}" }, "url": "{{baseUrl}}/api/subscriptionupdate" } }
+      ]
+    },
+    {
+      "name": "Link Data Service",
+      "item": [
+        { "name": "Create Or Update Link Data", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"taskId\": 101,\n  \"link\": \"abc123\",\n  \"owner\": \"owner@example.com\",\n  \"duedate\": \"2026-06-01\",\n  \"group\": \"Team A\",\n  \"member\": \"John\",\n  \"taskname\": \"Filter Change\",\n  \"completeddate\": \"2026-06-02\",\n  \"location\": \"HQ\",\n  \"subscription\": \"Paid\",\n  \"updatedBy\": \"owner@example.com\"\n}" }, "url": "{{baseUrl}}/api/link-data" } },
+        { "name": "GET Link Data (No Device Token)", "request": { "method": "GET", "url": "{{baseUrl}}/api/link-data/get-link-data?link=abc123" } },
+        { "name": "GET Check Link Data Access (Stores Device Token)", "request": { "method": "GET", "header": [{ "key": "device-token", "value": "sample-device-token" }], "url": "{{baseUrl}}/api/link-data/check-link-data?link=abc123" } },
+        { "name": "Get Member Link Data", "request": { "method": "GET", "url": "{{baseUrl}}/api/link-data/get-member-link-data?link=abc123&otp=123456" } },
+        { "name": "Get Owner Link Data", "request": { "method": "GET", "url": "{{baseUrl}}/api/link-data/get-owner-link-data?owner=owner@example.com" } }
+      ]
+    },
+    {
+      "name": "Location Request Service",
+      "item": [
+        {
+          "name": "Respond",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"adminId\": 1,\n  \"userId\": 2,\n  \"status\": \"accepted\",\n  \"location\": \"Bengaluru, India\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946\n}" },
+            "url": "{{baseUrl}}/api/location-request/respond"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Account Delete Service",
+      "item": [
+        { "name": "Send Delete OTP", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\"\n}" }, "url": "{{baseUrl}}/api/account/delete/send-otp" } },
+        { "name": "Verify Delete OTP", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}" }, "url": "{{baseUrl}}/api/account/delete/verify-otp" } }
+      ]
+    },
+    {
+      "name": "System Endpoints",
+      "item": [
+        { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/_health" } },
+        { "name": "Account Delete Page", "request": { "method": "GET", "url": "{{baseUrl}}/account-delete" } },
+        { "name": "AASA", "request": { "method": "GET", "url": "{{baseUrl}}/.well-known/apple-app-site-association" } },
+        { "name": "Assetlinks", "request": { "method": "GET", "url": "{{baseUrl}}/.well-known/assetlinks.json" } },
+        { "name": "AASA Root Alias", "request": { "method": "GET", "url": "{{baseUrl}}/apple-app-site-association" } },
+        { "name": "Assetlinks Root Alias", "request": { "method": "GET", "url": "{{baseUrl}}/assetlinks.json" } },
+        { "name": "Well Known Debug", "request": { "method": "GET", "url": "{{baseUrl}}/_debug/wk" } },
+        { "name": "Well Known Cat (AASA)", "request": { "method": "GET", "url": "{{baseUrl}}/.well-known/_cat/apple-app-site-association" } }
+      ]
+    }
+  ]
+}

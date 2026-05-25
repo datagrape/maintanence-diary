@@ -7,7 +7,7 @@ function cleanString(value) {
 
 exports.linkData = async (req, res) => {
   let {
-    link, owner, duedate, group, member, taskname, completeddate, location, subscription
+    taskId, link, owner, duedate, group, member, taskname, completeddate, location, subscription, updatedBy
   } = req.body;
 
   if (!link) {
@@ -15,6 +15,7 @@ exports.linkData = async (req, res) => {
   }
 
   // 🧼 Sanitize all string inputs
+  taskId = cleanString(taskId);
   link = cleanString(link);
   owner = cleanString(owner);
   group = cleanString(group);
@@ -23,10 +24,11 @@ exports.linkData = async (req, res) => {
   completeddate = cleanString(completeddate);
   location = cleanString(location);
   subscription = cleanString(subscription);
+  updatedBy = cleanString(updatedBy);
 
   
   // 🔍 Check for null bytes (for debugging)
-  for (const [key, value] of Object.entries({ link, owner, duedate, group, member, taskname, completeddate, location, subscription })) {
+  for (const [key, value] of Object.entries({taskId, link, owner, duedate, group, member, taskname, completeddate, location, subscription, updatedBy })) {
     if (typeof value === 'string' && value.includes('\x00')) {
       console.log(`🚨 Null byte found in field: ${key}`);
     }
@@ -34,7 +36,7 @@ exports.linkData = async (req, res) => {
 
   try {
     const linkResponse = await linkDataUpdateService.linkData(
-      link, owner, duedate, group, member, taskname, completeddate, location, subscription
+      taskId, link, owner, duedate, group, member, taskname, completeddate, location, subscription,updatedBy
     );
 
     return res.status(201).json({
@@ -87,7 +89,7 @@ exports.getLinkData = async (req, res) => {
   }
 
   try {
-    const linkResponse = await linkDataUpdateService.getLinkData(link); // Updated service function
+    const linkResponse = await linkDataUpdateService.getLinkData(link);
 
     return res.status(200).json({
       message: "Link data retrieved successfully",
@@ -141,6 +143,35 @@ exports.getMemberLinkData = async (req, res) => {
   }
 };
 
+exports.checkLinkAccessed = async (req, res) => {
+  let { link } = req.query;
+  const deviceToken = req.headers['device-token'] || req.headers['x-device-token'] || null;
+
+  if (!link) {
+    return res.status(400).json({ error: "Missing required field: link is required." });
+  }
+
+  // 🧼 Sanitize input
+  link = cleanString(link);
+
+  try {
+    const result = await linkDataUpdateService.checkLinkAccessed(link, { deviceToken });
+
+    if (result?.message === "Link is expired or not found") {
+      return res.status(404).json({ message: result.message });
+    }
+
+    return res.status(200).json({
+      message: "Link is valid and not accessed",
+      link: result
+    });
+  } catch (error) {
+    console.error("Error checking link access:", error);
+    return res.status(500).json({
+      error: "An error occurred while checking the link."
+    });
+  }
+};
 
 exports.getOwnerLinkData = async (req, res) => {
   let {owner } = req.query; // Query parameters from the request

@@ -37,6 +37,7 @@ model User {
   id                          Int                       @id @default(autoincrement())
   name                        String?
   email                       String                    @unique
+  deviceToken                 String?
   password                    String?
   userType                    UserType
   link                        String?
@@ -148,6 +149,16 @@ model LocationRequestResponse {
   @@index([adminId])
 }
 
+
+model LocationRequestNotification {
+  id          Int      @id @default(autoincrement())
+  requestId   String   @unique
+  taskId      String
+  deviceToken String
+  status      String   @default("pending")
+  sentAt      DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
 enum UserType {
   Superadmin
   Admin

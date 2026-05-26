@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const loginService = require('../services/loginService');
 
 exports.loginUser = async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password, deviceToken } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
@@ -23,6 +23,10 @@ exports.loginUser = async (req, res, next) => {
 
     if (user.isDisabled) {
       return res.status(401).json({ error: 'Account Not Found or Disabled' });
+    }
+
+    if (deviceToken) {
+      await loginService.saveDeviceToken(user.id, deviceToken);
     }
 
 

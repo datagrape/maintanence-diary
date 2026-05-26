@@ -133,6 +133,41 @@ exports.getLinkData = async (links) => {
   });
 };
 
+
+// -------------------------------------------------------
+// GET LINKS + ASSOCIATED DEVICE TOKENS
+// -------------------------------------------------------
+exports.getLinkDataWithDeviceToken = async () => {
+  const linkRows = await prisma.link.findMany();
+
+  const taskIds = [...new Set(linkRows.map(row => row.taskId).filter(Boolean))];
+  if (taskIds.length === 0) {
+    return [];
+  }
+
+  const deviceRows = await prisma.deviceToken.findMany({
+    where: { taskId: { in: taskIds } },
+    select: {
+      token: true,
+      taskId: true,
+      userId: true,
+      platform: true,
+      isActive: true,
+      updatedAt: true
+    }
+  });
+
+  const devicesByTaskId = deviceRows.reduce((acc, row) => {
+    if (!acc[row.taskId]) acc[row.taskId] = [];
+    acc[row.taskId].push(row);
+    return acc;
+  }, {});
+
+  return linkRows.map(linkRow => ({
+    ...linkRow,
+    deviceTokens: devicesByTaskId[linkRow.taskId] || []
+  }));
+};
 // -------------------------------------------------------
 // CHECK ACCESS STATUS
 // -------------------------------------------------------

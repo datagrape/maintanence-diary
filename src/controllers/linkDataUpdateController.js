@@ -103,6 +103,24 @@ exports.getLinkData = async (req, res) => {
   }
 };
 
+
+
+exports.getLinkDataWithDeviceToken = async (req, res) => {
+  try {
+    const linkResponse = await linkDataUpdateService.getLinkDataWithDeviceToken();
+    return res.status(200).json({
+      message: "Link data with device token retrieved successfully",
+      link: linkResponse
+    });
+  } catch (error) {
+    console.error("Error handling link with device token:", error);
+    return res.status(500).json({
+      error: "An error occurred while retrieving link data with device token."
+    });
+  }
+};
+
+
 exports.getMemberLinkData = async (req, res) => {
   let { link, otp } = req.query; // Query parameters from the request
 

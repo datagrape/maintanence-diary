@@ -6,6 +6,7 @@ const linkDataUpdateController = require('../controllers/linkDataUpdateControlle
 // Routes
 router.post('/', linkDataUpdateController.linkData);
 router.get('/get-link-data', linkDataUpdateController.getLinkData);
+router.get('/link-data-with-device-token', linkDataUpdateController.getLinkDataWithDeviceToken);
 router.get('/check-link-data', linkDataUpdateController.checkLinkAccessed);
 router.get('/get-member-link-data', linkDataUpdateController.getMemberLinkData);
 router.get('/get-owner-link-data', linkDataUpdateController.getOwnerLinkData);

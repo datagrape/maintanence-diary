@@ -133,7 +133,6 @@ exports.getLinkData = async (links) => {
   });
 };
 
-
 // -------------------------------------------------------
 // GET LINKS + ASSOCIATED DEVICE TOKENS
 // -------------------------------------------------------
@@ -141,21 +140,40 @@ exports.getLinkDataWithDeviceToken = async () => {
   const linkRows = await prisma.link.findMany();
 
   const taskIds = [...new Set(linkRows.map(row => row.taskId).filter(Boolean))];
-  if (taskIds.length === 0) {
-    return [];
+  const ownerKeys = [...new Set(linkRows.map(row => row.owner).filter(Boolean))];
+
+  let deviceRows = [];
+  if (taskIds.length > 0) {
+    deviceRows = await prisma.deviceToken.findMany({
+      where: { taskId: { in: taskIds } },
+      select: {
+        token: true,
+        taskId: true,
+        userId: true,
+        platform: true,
+        isActive: true,
+        updatedAt: true
+      }
+    });
   }
 
-  const deviceRows = await prisma.deviceToken.findMany({
-    where: { taskId: { in: taskIds } },
-    select: {
-      token: true,
-      taskId: true,
-      userId: true,
-      platform: true,
-      isActive: true,
-      updatedAt: true
-    }
-  });
+  let ownerUsers = [];
+  if (ownerKeys.length > 0) {
+    ownerUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { link: { in: ownerKeys } },
+          { email: { in: ownerKeys } }
+        ]
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        link: true
+      }
+    });
+  }
 
   const devicesByTaskId = deviceRows.reduce((acc, row) => {
     if (!acc[row.taskId]) acc[row.taskId] = [];
@@ -163,8 +181,35 @@ exports.getLinkDataWithDeviceToken = async () => {
     return acc;
   }, {});
 
+  const ownerNameByKey = ownerUsers.reduce((acc, user) => {
+    const resolved = user.name || user.email || String(user.id);
+    if (user.link) acc[user.link] = resolved;
+    if (user.email) acc[user.email] = resolved;
+    acc[String(user.id)] = resolved;
+    return acc;
+  }, {});
+
+  function normalizeLocation(rawLocation) {
+    if (rawLocation === null || rawLocation === undefined) return null;
+    if (rawLocation === "[object Object]") return null;
+    if (typeof rawLocation !== 'string') return rawLocation;
+
+    const trimmed = rawLocation.trim();
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        return rawLocation;
+      }
+    }
+    return rawLocation;
+  }
+
   return linkRows.map(linkRow => ({
     ...linkRow,
+    ownerId: linkRow.owner,
+    owner: ownerNameByKey[linkRow.owner] || linkRow.owner,
+    location: normalizeLocation(linkRow.location),
     deviceTokens: devicesByTaskId[linkRow.taskId] || []
   }));
 };

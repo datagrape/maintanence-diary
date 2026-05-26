@@ -22,7 +22,9 @@ exports.linkData = async (req, res) => {
   member = cleanString(member);
   taskname = cleanString(taskname);
   completeddate = cleanString(completeddate);
-  location = cleanString(location);
+  location = typeof location === 'object' && location !== null
+    ? JSON.stringify(location)
+    : cleanString(location);
   subscription = cleanString(subscription);
   updatedBy = cleanString(updatedBy);
 

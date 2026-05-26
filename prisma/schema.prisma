@@ -37,7 +37,6 @@ model User {
   id                          Int                       @id @default(autoincrement())
   name                        String?
   email                       String                    @unique
-  deviceToken                 String?
   password                    String?
   userType                    UserType
   link                        String?
@@ -50,6 +49,7 @@ model User {
   isDisabled                  Boolean                   @default(false)
   passwordResetToken          String?
   passwordResetTokenExpiresAt DateTime?
+  deviceToken                 String?
   deviceTokens                DeviceToken[]
   locationResponsesAsAdmin    LocationRequestResponse[] @relation("LocationResponseAdmin")
   locationResponsesAsUser     LocationRequestResponse[] @relation("LocationResponseUser")
@@ -149,7 +149,6 @@ model LocationRequestResponse {
   @@index([adminId])
 }
 
-
 model LocationRequestNotification {
   id          Int      @id @default(autoincrement())
   requestId   String   @unique
@@ -159,6 +158,7 @@ model LocationRequestNotification {
   sentAt      DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
 enum UserType {
   Superadmin
   Admin

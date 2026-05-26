@@ -116,7 +116,7 @@
       "item": [
         { "name": "Create Or Update Link Data", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"taskId\": 101,\n  \"link\": \"abc123\",\n  \"owner\": \"owner@example.com\",\n  \"duedate\": \"2026-06-01\",\n  \"group\": \"Team A\",\n  \"member\": \"John\",\n  \"taskname\": \"Filter Change\",\n  \"completeddate\": \"2026-06-02\",\n  \"location\": \"HQ\",\n  \"subscription\": \"Paid\",\n  \"updatedBy\": \"owner@example.com\"\n}" }, "url": "{{baseUrl}}/api/link-data" } },
         { "name": "GET Link Data (No Device Token)", "request": { "method": "GET", "url": "{{baseUrl}}/api/link-data/get-link-data?link=abc123" } },
-        { "name": "GET Link Data With Device Token", "request": { "method": "GET", "url": "{{baseUrl}}/api/link-data/link-data-with-device-token" } },
+        { "name": "GET Link Data With Device Token + Request Status", "request": { "method": "GET", "url": "{{baseUrl}}/api/link-data/link-data-with-device-token" } },
         { "name": "GET Check Link Data Access (Stores Device Token)", "request": { "method": "GET", "header": [{ "key": "device-token", "value": "sample-device-token" }], "url": "{{baseUrl}}/api/link-data/check-link-data?link=abc123" } },
         { "name": "Get Member Link Data", "request": { "method": "GET", "url": "{{baseUrl}}/api/link-data/get-member-link-data?link=abc123&otp=123456" } },
         { "name": "Get Owner Link Data", "request": { "method": "GET", "url": "{{baseUrl}}/api/link-data/get-owner-link-data?owner=owner@example.com" } }

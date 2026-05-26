@@ -157,6 +157,20 @@ exports.getLinkDataWithDeviceToken = async () => {
     });
   }
 
+  let requestRows = [];
+  if (taskIds.length > 0) {
+    requestRows = await prisma.locationRequestNotification.findMany({
+      where: { taskId: { in: taskIds } },
+      select: {
+        taskId: true,
+        deviceToken: true,
+        status: true,
+        updatedAt: true
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+  }
+
   let ownerUsers = [];
   if (ownerKeys.length > 0) {
     ownerUsers = await prisma.user.findMany({
@@ -178,6 +192,17 @@ exports.getLinkDataWithDeviceToken = async () => {
   const devicesByTaskId = deviceRows.reduce((acc, row) => {
     if (!acc[row.taskId]) acc[row.taskId] = [];
     acc[row.taskId].push(row);
+    return acc;
+  }, {});
+
+  const latestStatusByTaskAndToken = requestRows.reduce((acc, row) => {
+    const key = `${row.taskId}::${row.deviceToken}`;
+    if (!acc[key]) {
+      acc[key] = {
+        status: row.status,
+        updatedAt: row.updatedAt
+      };
+    }
     return acc;
   }, {});
 
@@ -205,13 +230,25 @@ exports.getLinkDataWithDeviceToken = async () => {
     return rawLocation;
   }
 
-  return linkRows.map(linkRow => ({
-    ...linkRow,
-    ownerId: linkRow.owner,
-    owner: ownerNameByKey[linkRow.owner] || linkRow.owner,
-    location: normalizeLocation(linkRow.location),
-    deviceTokens: devicesByTaskId[linkRow.taskId] || []
-  }));
+  return linkRows.map(linkRow => {
+    const mappedDeviceTokens = (devicesByTaskId[linkRow.taskId] || []).map(tokenRow => {
+      const statusKey = `${tokenRow.taskId}::${tokenRow.token}`;
+      const requestStatus = latestStatusByTaskAndToken[statusKey];
+      return {
+        ...tokenRow,
+        requestStatus: requestStatus?.status || null,
+        requestStatusUpdatedAt: requestStatus?.updatedAt || null
+      };
+    });
+
+    return {
+      ...linkRow,
+      ownerId: linkRow.owner,
+      owner: ownerNameByKey[linkRow.owner] || linkRow.owner,
+      location: normalizeLocation(linkRow.location),
+      deviceTokens: mappedDeviceTokens
+    };
+  });
 };
 // -------------------------------------------------------
 // CHECK ACCESS STATUS

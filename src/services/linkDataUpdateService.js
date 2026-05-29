@@ -42,6 +42,18 @@ const ensureUserEnabled = async (userId) => {
   return user;
 };
 
+const normalizeIntOrNull = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = typeof value === 'string' ? parseInt(value, 10) : value;
+  return Number.isInteger(parsed) ? parsed : null;
+};
+
+const normalizeGuidOrNull = (value) => {
+  if (value === undefined || value === null) return null;
+  const trimmed = String(value).trim();
+  return trimmed || null;
+};
+
 // -------------------------------------------------------
 // LINK DATA CREATE/UPDATE
 // -------------------------------------------------------
@@ -56,25 +68,51 @@ exports.linkData = async (
   completeddate,
   location,
   subscription,
-  updatedBy
+  updatedBy,
+  status,
+  userId,
+  guid
 ) => {
+  const ALLOWED_TASK_STATUS = new Set(['created', 'assigned', 'completed']);
+  const normalizedStatus = String(status || '').trim().toLowerCase();
+  const finalStatus =
+    normalizedStatus && ALLOWED_TASK_STATUS.has(normalizedStatus)
+      ? normalizedStatus
+      : (completeddate ? 'completed' : undefined);
 
-  // 🔐 Validate the user performing the update
-  await ensureUserEnabled(updatedBy);
+  const normalizedUserId = normalizeIntOrNull(userId);
+  const normalizedGuid = normalizeGuidOrNull(guid);
+  if (normalizedUserId !== null && normalizedGuid) {
+    const err = new Error('Provide only one of userId or guid');
+    err.status = 400;
+    throw err;
+  }
+  if (normalizedUserId !== null) {
+    await ensureUserEnabled(normalizedUserId);
+  } else if (!normalizedGuid) {
+    const err = new Error('userId or guid is required');
+    err.status = 400;
+    throw err;
+  }
 
   const existingLink = await prisma.link.findUnique({ where: { link } });
-
   const linksWithTaskId = await prisma.link.findMany({ where: { taskId } });
+  const taskScopeByIdentity = normalizedUserId !== null
+    ? { taskId, userId: normalizedUserId, ...(link ? { link } : {}) }
+    : { taskId, guid: normalizedGuid, ...(link ? { link } : {}) };
+  const taskScopeForCompletion = {
+    taskId,
+    ...(link ? { link } : {})
+  };
+  const resolveTaskScope = () =>
+    finalStatus === 'completed' ? taskScopeForCompletion : taskScopeByIdentity;
 
   const allUpdatedByNull =
     linksWithTaskId.length > 0 &&
     linksWithTaskId.every(l => l.updatedBy === null);
 
-  // ------------------------------------------
-  // CASE 1: No link exists → create new entry
-  // ------------------------------------------
   if (!existingLink) {
-    return prisma.link.create({
+    const created = await prisma.link.create({
       data: {
         taskId,
         link,
@@ -85,14 +123,23 @@ exports.linkData = async (
         taskname,
         completeddate,
         location,
-        subscription
+        subscription,
+        status: finalStatus || 'created',
+        userId: normalizedUserId,
+        guid: normalizedGuid
       }
     });
+
+    if (finalStatus) {
+      await prisma.task.updateMany({
+        where: resolveTaskScope(),
+        data: { status: finalStatus, completeddate, updatedBy, location }
+      });
+    }
+
+    return created;
   }
 
-  // --------------------------------------------------------
-  // CASE 2: Link exists + all updatedBy are null → first update
-  // --------------------------------------------------------
   if (existingLink && allUpdatedByNull) {
     await prisma.link.updateMany({
       where: { taskId },
@@ -100,23 +147,41 @@ exports.linkData = async (
         completeddate,
         location,
         updatedBy,
-        isAccessed: 1
+        userId: normalizedUserId,
+        guid: normalizedGuid,
+        ...(finalStatus ? { status: finalStatus } : {})
       }
     });
+
+    if (finalStatus) {
+      await prisma.task.updateMany({
+        where: resolveTaskScope(),
+        data: { status: finalStatus, completeddate, updatedBy, location }
+      });
+    }
 
     return prisma.link.findUnique({ where: { link } });
   }
 
-  // --------------------------------------------------------
-  // CASE 3: Link already updated by someone else → return their values
-  // --------------------------------------------------------
   const updatedLink = linksWithTaskId.find(l => l.updatedBy !== null);
+
+  if (finalStatus) {
+    await prisma.link.updateMany({
+      where: { taskId },
+      data: { status: finalStatus }
+    });
+
+    await prisma.task.updateMany({
+      where: resolveTaskScope(),
+      data: { status: finalStatus, completeddate, updatedBy, location }
+    });
+  }
 
   return {
     completeddate: updatedLink?.completeddate,
     location: updatedLink?.location,
     updatedBy: updatedLink?.updatedBy,
-    message: "Link is already updatedBy by someone"
+    message: 'Link is already updatedBy by someone'
   };
 };
 
@@ -250,6 +315,7 @@ exports.getLinkDataWithDeviceToken = async () => {
     };
   });
 };
+
 // -------------------------------------------------------
 // CHECK ACCESS STATUS
 // -------------------------------------------------------
@@ -318,3 +384,4 @@ exports.getOwnerLinkData = async (owner) => {
 
   return [];
 };
+

@@ -7,7 +7,7 @@ function cleanString(value) {
 
 exports.linkData = async (req, res) => {
   let {
-    taskId, link, owner, duedate, group, member, taskname, completeddate, location, subscription, updatedBy
+    taskId, link, owner, duedate, group, member, taskname, completeddate, location, subscription, updatedBy, status, userId, guid
   } = req.body;
 
   if (!link) {
@@ -27,10 +27,12 @@ exports.linkData = async (req, res) => {
     : cleanString(location);
   subscription = cleanString(subscription);
   updatedBy = cleanString(updatedBy);
+  status = cleanString(status);
+  guid = cleanString(guid);
 
   
   // 🔍 Check for null bytes (for debugging)
-  for (const [key, value] of Object.entries({taskId, link, owner, duedate, group, member, taskname, completeddate, location, subscription, updatedBy })) {
+  for (const [key, value] of Object.entries({taskId, link, owner, duedate, group, member, taskname, completeddate, location, subscription, updatedBy, status, userId, guid })) {
     if (typeof value === 'string' && value.includes('\x00')) {
       console.log(`🚨 Null byte found in field: ${key}`);
     }
@@ -38,7 +40,7 @@ exports.linkData = async (req, res) => {
 
   try {
     const linkResponse = await linkDataUpdateService.linkData(
-      taskId, link, owner, duedate, group, member, taskname, completeddate, location, subscription,updatedBy
+      taskId, link, owner, duedate, group, member, taskname, completeddate, location, subscription,updatedBy, status, userId, guid
     );
 
     return res.status(201).json({
@@ -84,6 +86,12 @@ exports.getLinkData = async (req, res) => {
   if (!link) {
     return res.status(400).json({ error: "Missing required field: link is required." });
   }
+  if ((userId === undefined || userId === null || userId === '') && (!guid || !String(guid).trim())) {
+    return res.status(400).json({ error: "userId or guid is required." });
+  }
+  if (!(userId === undefined || userId === null || userId === '') && guid && String(guid).trim()) {
+    return res.status(400).json({ error: "Provide only one of userId or guid." });
+  }
 
   // Convert comma-separated string to array if needed
   if (typeof link === 'string') {
@@ -105,8 +113,6 @@ exports.getLinkData = async (req, res) => {
   }
 };
 
-
-
 exports.getLinkDataWithDeviceToken = async (req, res) => {
   try {
     const linkResponse = await linkDataUpdateService.getLinkDataWithDeviceToken();
@@ -121,7 +127,6 @@ exports.getLinkDataWithDeviceToken = async (req, res) => {
     });
   }
 };
-
 
 exports.getMemberLinkData = async (req, res) => {
   let { link, otp } = req.query; // Query parameters from the request

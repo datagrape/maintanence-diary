@@ -9,42 +9,63 @@ datasource db {
 
 model Activity {
   id     Int    @id @default(autoincrement())
-  userId Int
   name   String
+  userId Int?
+  guid   String?
+
+  @@index([userId])
+  @@index([guid])
 }
 
 model Group {
   id     Int    @id @default(autoincrement())
-  userId Int
+  userId Int?
+  guid   String?
   name   String
+
+  @@index([userId])
+  @@index([guid])
 }
 
 model Task {
-  id           Int     @id @default(autoincrement())
-  userId       Int
-  name         String?
-  groupName    String
-  groupId      Int
-  activityName String
-  activityId   Int
-  member       String
-  dueDate      String
-  type         String
-  location     String?
+  id            Int     @id @default(autoincrement())
+  userId        Int?
+  guid          String?
+  groupName     String
+  groupId       Int?
+  activityName  String
+  activityId    Int?
+  member        String
+  dueDate       String
+  name          String?
+  location      String?
+  type          String
+  completeddate String?
+  link          String?
+  status        String  @default("created")
+  taskId        String?
+  updatedBy     String?
+  url           String?
+
+  @@index([userId])
+  @@index([guid])
+  @@index([taskId])
+  @@unique([taskId, userId])
+  @@unique([taskId, guid])
 }
 
 model User {
   id                          Int                       @id @default(autoincrement())
-  name                        String?
   email                       String                    @unique
-  password                    String?
-  userType                    UserType
-  link                        String?
-  subscriptionType            SubscriptionType
-  lastPaymentDate             DateTime?
+  name                        String?
   cancellationReason          String?
+  lastPaymentDate             DateTime?
+  link                        String?
   otp                         String?
   otpExpiration               DateTime?
+  password                    String?
+  subscriptionType            SubscriptionType
+  userType                    UserType
   createdAt                   DateTime                  @default(now())
   isDisabled                  Boolean                   @default(false)
   passwordResetToken          String?
@@ -82,20 +103,26 @@ model Payment {
 }
 
 model Link {
-  id            Int       @id @default(autoincrement())
-  link          String    @unique
+  id            Int     @id @default(autoincrement())
+  link          String  @unique
   owner         String?
-  taskname      String?
-  member        String?
-  group         String?
-  duedate       String?
   completeddate String?
+  duedate       String?
+  freecount     Int     @default(5)
+  group         String?
+  isAccessed    Int     @default(0)
   location      String?
-  freecount     Int       @default(5)
+  member        String?
   subscription  String?
-  expiresAt     DateTime?
-  isAccessed    Int       @default(0)
-  taskId        Int?
+  taskId        String
+  taskname      String?
+  updatedBy     String?
+  status        String  @default("created")
+  userId        Int?
+  guid          String?
+
+  @@index([userId])
+  @@index([guid])
 }
 
 model paidmemberdata {
@@ -116,33 +143,33 @@ model Ad {
 
 model DeviceToken {
   id        Int      @id @default(autoincrement())
-  token     String   @unique
-  taskId    Int?
   userId    Int?
+  token     String   @unique
   platform  String   @default("unknown")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  taskId    String?
   user      User?    @relation(fields: [userId], references: [id])
 
+  @@index([userId])
   @@index([taskId])
 }
 
 model LocationRequestResponse {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   requestId   String
   adminId     Int
   userId      Int
   status      String
   latitude    Float?
   longitude   Float?
-  accuracy    Float?
-  notes       String?
-  respondedAt DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  admin       User     @relation("LocationResponseAdmin", fields: [adminId], references: [id])
-  user        User     @relation("LocationResponseUser", fields: [userId], references: [id])
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  location    String?
+  admin       User      @relation("LocationResponseAdmin", fields: [adminId], references: [id])
+  user        User      @relation("LocationResponseUser", fields: [userId], references: [id])
 
   @@index([requestId])
   @@index([userId])

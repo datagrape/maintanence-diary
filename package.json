@@ -5,6 +5,7 @@
   "scripts": {
     "start": "nodemon src/server.js",
     "prisma:generate": "prisma generate",
+    "db:backfill-task-ids": "node scripts/backfill_task_ids.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

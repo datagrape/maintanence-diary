@@ -29,7 +29,6 @@ exports.loginUser = async (req, res, next) => {
       await loginService.saveDeviceToken(user.id, deviceToken);
     }
 
-
     // Generate JWT token
     const token = jwt.sign({ userId: user.id }, 'your_jwt_secret', {
     });
@@ -40,6 +39,8 @@ exports.loginUser = async (req, res, next) => {
         email: user.email,
         userType: user.userType,
         subscriptionType: user.subscriptionType,
+        accountPlan: user.subscriptionType === 'Free' ? 'free' : 'paid',
+        isPaidUser: user.subscriptionType !== 'Free',
         userId: user.id,
       }
     });
